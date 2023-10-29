@@ -113,8 +113,6 @@ df_red_point %<>% ftransform(area_size =  st_area(geoms))
 df_red_point %<>% ftransform(r =  sqrt(area_size/pi))
 st_geometry(df_red_point) %<>% st_centroid()
 
-# df_red_point2 <- df_red_point
-# st_geometry(df_red_point2) %<>% st_buffer(dist = (df_red_point2$r))
 
 
 #-----------------------
@@ -123,7 +121,7 @@ df_plot <-
   join(df1,df_red_point,on =c("loc_name"="label") )
 df_plot %<>% st_as_sf(crs = st_crs(df_red_point))
 
-# Allow multiple alarms to be detected another day
+# allow multiple alarms to be detected on the same day
 set.seed(456)
 df_plot <- st_jitter(df_plot)
 
