@@ -1,0 +1,53 @@
+
+resp_more_then <- function(resp, min_length) {
+  resp_content_length <- resp_header(resp, "Content-Length")  
+  resp_content_length <- as.numeric(resp_content_length)
+  return(resp_content_length>=min_length)
+}
+
+
+resp_json_as_DT <- function(resp) {
+  resp  |> resp_body_string() |> fromJSON() |> qDT()
+}
+
+
+
+get_alarm_history <- function(days_range, language) {
+  
+  url_alarms_history <-
+    "https://www.oref.org.il//Shared/Ajax/GetAlarmsHistory.aspx"
+  
+  req <- request(url_alarms_history)
+  
+  
+  resp_list <- 
+    foreach(day = days_range) %do%{
+      print(day)
+      
+      query_alarms_history <- 
+        list( fromDate = day-1,
+              toDate = day,
+              lang=language,
+              mode=0)
+      
+      resp <- 
+        req %>% 
+        req_url_query(!!!query_alarms_history) %>% 
+        req_perform()
+      resp
+    }
+  
+  more_then_30 <- 
+    resp_list %>% sapply(resp_more_then,min_length = 30)
+  resp_list %<>% .[more_then_30]
+  resp_list %<>%  lapply(resp_json_as_DT)
+  
+  df_return <-  rowbind(resp_list)
+  
+  return(df_return)
+
+}
+
+
+he_tran("טווח ימים")
+days_range

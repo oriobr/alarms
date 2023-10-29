@@ -1,0 +1,313 @@
+# library(fastverse)
+library("data.table")
+library("magrittr")
+library("kit")
+library("collapse")
+library(RCurl)
+library(httr2)
+library(jsonlite)
+library(sf)
+library(rrapply)
+library(ggplot2)
+library(qs)
+library(anytime)
+library(units)
+library(foreach)
+library(ragg)
+library(ggtext)
+library(geomtextpath)
+library(ggh4x)
+
+
+
+
+
+
+#------------------
+library(systemfonts)
+font_d <- 
+  systemfonts::system_fonts() %>% qDT()
+
+
+# font_d[family %like% "Heebo"]
+
+# 
+# Heebo_reg <- "Heebo-Regular"
+# register_variant(
+#   name = "Heebo-Regular", 
+#   family = "Heebo", 
+#   weight = "normal")
+# 
+# register_variant(
+#   name = "Heebo-Medium", 
+#   family = "Heebo", 
+#   weight = "medium")
+# 
+# tlv_font <- "TelAviv-BrutalistRegular"
+# 
+# register_variant(
+#   name = "TelAviv-BrutalistRegular", 
+#   family = "Tel Aviv", 
+#   weight = "normal")
+# 
+# 
+# # theme_set(text = element_text(family = "Heebo-Medium"))
+# theme_update(text = element_text(family = "Heebo-Medium"))
+
+windowsFonts(Heebo = windowsFont("TT Heebo"))
+#------------------
+
+all_area_url <- 
+"https://services-eu1.arcgis.com/Vh4Ni8nW38EHDz4d/ArcGIS/rest/services/ADM_Insturction_Policy_V/FeatureServer/0"
+
+
+df_all_area <- arcpullr::get_spatial_layer(all_area_url)
+
+sf_use_s2(FALSE)
+map_all_area <- 
+df_all_area %>%
+  st_geometry() %>% 
+  st_buffer(dist = 0.00005) %>%
+  st_union()
+sf_use_s2(TRUE) 
+
+rm(df_all_area)
+
+
+#----------------
+
+
+
+url_alarms_history <-
+"https://www.oref.org.il//Shared/Ajax/GetAlarmsHistory.aspx"
+
+req <- request(url_alarms_history)
+
+
+day_list <-  seq.Date(as.Date("2023-10-6"),Sys.Date(),by = 1)
+
+
+
+resp_list_en <- 
+foreach(day = day_list) %do%{
+# Sys.sleep(2)
+print(day)
+  
+query_alarms_history <- 
+  list( fromDate = day-1,
+        toDate = day,
+        lang="en",
+        mode=0)
+
+resp <- 
+req %>% 
+  req_url_query(!!!query_alarms_history) %>% 
+  req_perform()
+resp
+}
+
+
+resp_list <- 
+foreach(day = day_list) %do%{
+# Sys.sleep(2)
+print(day)
+  
+query_alarms_history <- 
+  list( fromDate = day-1,
+        toDate = day,
+        mode=0)
+
+resp <- 
+req %>% 
+  req_url_query(!!!query_alarms_history) %>% 
+  req_perform()
+resp
+}
+
+
+resp_more_then <- function(resp, min_length) {
+  resp_content_length <- resp_header(resp, "Content-Length")  
+  resp_content_length <- as.numeric(resp_content_length)
+  return(resp_content_length>=min_length)
+}
+
+resp_json_as_DT <- function(resp) {
+  resp  |> resp_body_string() |> fromJSON() |> qDT()
+}
+
+more_then_100 <- 
+resp_list %>% sapply(resp_more_then,min_length = 100)
+resp_list %<>% .[more_then_100]
+resp_list %<>%  lapply(resp_json_as_DT)
+
+more_then_100 <- 
+resp_list_en %>% sapply(resp_more_then,min_length = 100)
+resp_list_en %<>% .[more_then_100]
+resp_list_en %<>%  lapply(resp_json_as_DT)
+
+df1 <-  rowbind(resp_list)
+df_en <-  rowbind(resp_list_en)
+rm(resp,resp_list,resp_list_en)
+df_en %<>% .[,.(category_desc_en = category_desc,category) ]
+df_en %<>% funique()
+
+df1<- join(df1,df_en,on = "category")
+rm(df_en)
+
+df1[, alertDate :=anytime(alertDate) ]
+df1[,date_2 := anydate(alertDate)  ]
+setorder(df1,alertDate)
+df1[,alertDate_2 := anytime(round(alertDate, units = "hours"))] 
+# df1[,time_id := timeid(date_2)]
+
+# df1$alertDate_2  %>% as.ITime()
+
+setnames(df1,"data","loc_name")
+#------------------
+df_red_geo <- 
+qread("data/inter/Rdata/df_red_geo.qs")
+#---------------------
+df_red_point <- df_red_geo 
+
+df_red_point %<>% ftransform(area_size =  st_area(geoms))
+df_red_point %<>% ftransform(r =  sqrt(area_size/pi))
+st_geometry(df_red_point) %<>% st_centroid()
+
+df_red_point2 <- df_red_point
+st_geometry(df_red_point2) %<>% st_buffer(dist = (df_red_point2$r))
+
+
+#-----------------------
+
+df_plot <- 
+ # join(df1,df_red_geo,on =c("loc_name"="label") )
+ join(df1,df_red_point,on =c("loc_name"="label") )
+ # join(df1,df_red_point2,on =c("loc_name"="label") )
+df_plot %<>% st_as_sf(crs = st_crs(df_red_point))
+set.seed(456)
+df_plot <- st_jitter(df_plot)
+# df_plot <- st_jitter(df_plot,factor =  0.005)
+
+
+
+#----------------------------
+
+# df_red_point %>% 
+  # ggplot()+geom_sf_label(aes(label = loc_name))
+
+
+library(gganimate)
+library(colorspace)
+library(wesanderson)
+
+pal_info <-   wesanderson::wes_palette(name = "FantasticFox1")[c(1,2,4,5)]
+
+
+
+# pal_info <-   wesanderson::wes_palette(name = "FantasticFox1")[c(2,4,5)]
+# [1] "#DD8D29" "#E2D200"
+# [3] "#E58601" "#B40F20"
+pal_info %<>% rev()
+pal_info[4] <- "#228B22"
+
+# color_pal <- 
+# colorspace::sequential_hcl(n = 100,palette = "YlOrRd")
+
+set.seed(456)
+df_plot %<>% ftransform( fill_color  = sample(x = color_pal,size = fnrow(df_plot),replace = TRUE))
+
+#-------------------------
+
+
+
+map_all_area <- st_transform(map_all_area,st_crs(df_red_point))
+
+
+
+matrix_all_area <- st_coordinates(map_all_area)
+min_y <- which.min(matrix_all_area[,2])
+cord_x <- matrix_all_area[min_y,1]
+
+diff_y <- matrix_all_area[,2] %>% frange() %>% diff() 
+cord_y <- matrix_all_area[min_y,2]+(diff_y/5)
+rm(matrix_all_area,diff_y,min_y)
+
+
+
+hamas_is_isis <- 
+"#<span style='color:#0c800f'>**Hamas**</span>is<span style='color:#FF0000'>**ISIS**</span>"
+
+label_point <- c(cord_x, cord_y)
+label_point %<>% st_point()
+label_point %<>% st_sfc(crs = st_crs(df_red_point))
+df_label <- st_sf("hamas_is_isis" =hamas_is_isis,geoms = label_point)
+
+#-------------------------
+
+
+# first_day <- 
+# df_plot$date %>% unique() %>% first(3)
+# # 
+# # [1] "#DD8D29" "#E2D200"
+# # [3] "#E58601" "#B40F20"
+
+
+
+
+df_plot$category %>% funique()
+
+vec_category_desc_en <- 
+df_plot$category_desc_en %>% funique()
+info_guide <- guide_legend(title = NULL,label.theme = element_text( family = "Heebo" ,face = "bold",size = 5),keywidth =0.4 ,keyheight =0.4,override.aes = list(alpha = 1))
+
+
+
+
+p1 <-
+map_all_area %>%  ggplot()+ geom_sf(fill = "black")+
+  geom_sf(data = df_plot ,
+          aes(
+            size = as.numeric(r),
+              color =category_desc_en,
+              fill =category_desc_en,
+              group =date_2  ),
+          shape = 21,
+          alpha = 0.5,
+          key_glyph = draw_key_polygon
+          )+
+  scale_color_manual(values = (pal_info), aesthetics = c("fill"),breaks = vec_category_desc_en)+
+  scale_color_manual(values = darken(pal_info,amount = 0.3),
+                     aesthetics = c("color"),breaks = vec_category_desc_en)+
+  labs(subtitle = "Israel under attack")+
+  guides(colour = info_guide,fill =info_guide ,size = "none")+
+  theme_void(base_size = 18,base_family = "Heebo")+
+  xlab(hamas_is_isis)+
+  theme(plot.title = element_markdown(hjust = 0.5,face = "bold",family = "Heebo",margin = unit(c(0, 0, 0, 0), "lines"),padding = unit(c(0.25, 0, 0, 0), "lines")),
+        plot.subtitle = element_markdown(hjust = 0.5,face = "bold",family = "Heebo",size = 10,margin =unit(c(0, 0, 0, 0), "lines"),padding = unit(c(0, 0, 0, 0), "lines")),
+        axis.title.x.bottom = element_markdown(hjust = 0.5,face = "bold",family = "Heebo"),
+        legend.position = c(.3, .035),
+        legend.justification = c("right", "bottom"))
+
+
+p1
+
+
+amin <- 
+  p1+
+  transition_time(date_2)+
+  view_static()+
+  labs(title = " <span style='color:#CD3700'>{mday(frame_time)}</span>-{month(frame_time)}-{year(frame_time)}")+
+  enter_grow(size = 0.2)+
+  exit_fade()
+
+
+alarms_gif <-
+gganimate::animate(amin,device = 'ragg_png',renderer = gifski_renderer(),start_pause = 7,width = 500,height = 800,res = 200,detail = 3)
+
+gganimate::anim_save("output/figures/alarms_gif_15.gif",animation = alarms_gif )
+
+alarms_gif 
+
+
+
+

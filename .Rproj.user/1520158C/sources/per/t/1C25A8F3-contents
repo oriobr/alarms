@@ -1,0 +1,168 @@
+library(fastverse)
+library(RCurl)
+library(httr2)
+library(jsonlite)
+library(sf)
+library(rrapply)
+library(ggplot2)
+library(qs)
+
+#---------------------
+
+geo_url <- "https://www.tzevaadom.co.il/static/polygons.json?v=3"
+
+req <- request(geo_url)
+resp <- req_perform(req)
+
+
+poly_list<- 
+resp %>% 
+resp_body_string() %>% 
+  jsonlite::fromJSON() 
+# %>% qDT()
+
+poly_list %<>% lapply(\(x){x[,2:1]})
+poly_list %<>% lapply(\(x){st_polygon(list(x),dim = "XY")})
+df_geo_tz <- st_as_sfc(poly_list,crs = st_crs(4326))
+df_geo_tz <- st_sf(data.frame(id=names(poly_list), geom=df_geo_tz))
+
+df_geo_tz %>% sbt(id=="1749") %>% ggplot()+geom_sf()
+df_geo_tz  %>% ggplot()+geom_sf()
+
+rm(poly_list)
+
+#------------------------
+
+# 
+# 
+# stringr::str_to_lower("CITIES_MIX_URL")
+# 
+# cities_mix_url = "https://www.oref.org.il/Shared/Ajax/GetCitiesMix.aspx"
+# 
+# req <- request(cities_mix_url)
+# resp <- req_perform(req)
+# 
+# df_cities <- 
+# resp %>% 
+# resp_body_string() %>% 
+#   jsonlite::fromJSON() %>% 
+#   qDT()
+# 
+# df_cities %>% fndistinct()
+#-----------------------------------------------
+
+
+url <- "https://www.tzevaadom.co.il/static/cities.json?v=5"
+req <- request(url)
+resp <- req_perform(req)
+
+tzevaadom_data <- 
+  resp %>% 
+  resp_body_json() 
+
+
+tzevaadom_cities <-  tzevaadom_data$cities
+
+df_cities_tz <- 
+rrapply(tzevaadom_cities,how = "bind")
+rm(tzevaadom_data,tzevaadom_cities)
+setDT(df_cities_tz)
+df_cities_tz %<>% slt(-(ru:es))
+
+#------------------------------
+
+
+df_tzevaadom <- 
+join(df_cities_tz,df_geo_tz,on = "id")
+rm(df_cities_tz,df_geo_tz)
+
+
+
+df_tzevaadom %<>% st_as_sf()
+df_tzevaadom %>% ggplot()+geom_sf()
+#------------------------------------------
+
+qsave(df_tzevaadom, "data/inter/Rdata/df_tzevaadom.qs")
+rm(df_tzevaadom)
+
+#-------------------------------------
+
+
+
+
+
+
+# 
+# rm(df_cities2)
+# 
+# df_cities2$cities$`באר שבע - דרום` %>% unlist2d()
+# 
+# # %>% 
+# #   jsonlite::fromJSON() %>% 
+# #   qDT()
+# 
+# 
+# 
+# st_polygon(list(poly_list$`9`),dim = "XY") %>% plot()
+# 
+# 
+# 
+# poly_list$`4` %>% class()
+# 
+# 
+# AA <- 
+# poly_list$`4` 
+# 
+# 
+# 
+# AA[,2:1]
+# 
+# 
+# AA$`4`[1]
+# 
+# #----------------------------------
+# url <- "https://api.tzevaadom.co.il/static/cities.json"
+# url <- "https://www.oref.org.il/WarningMessages/Alert/alerts.json"
+# url <- "https://www.tzevaadom.co.il/static/cities.json"
+# 
+# url <-
+# "https://www.oref.org.il//Shared/Ajax/GetAlarmsHistory.aspx?lang=he&fromDate=27.08.2023&toDate=03.10.2023&mode=0"
+# 
+# url <-
+# "https://www.oref.org.il//Shared/Ajax/GetAlarmsHistory.aspx?fromDate=27.08.2023&toDate=03.10.2023&mode=0"
+# 
+# req <- request(url)
+# 
+# headers=list("X-Requested-With"="XMLHttpRequest","Referer"="https://www.oref.org.il/")
+# 
+# 
+# req %<>% req_headers(!!!headers)
+# 
+# response = requests.get("https://www.oref.org.il/WarningMessages/Alert/alerts.json", headers={"X-Requested-With":"XMLHttpRequest","Referer":"https://www.oref.org.il/"})
+# 
+# resp <- req_perform(req)
+# df_Cities <- 
+#   resp %>%
+#   resp_body_string() %>% 
+#   jsonlite::fromJSON() %>% qDT()
+# WW <- 
+# resp %>% resp_raw()
+# 
+# WW$body
+# 
+# 
+# 
+# DISTRICTS_URL = "https://www.oref.org.il/Shared/Ajax/GetDistricts.aspx"
+# 
+# 
+# 
+# 
+# #---------------
+# url_cities <- "https://www.oref.org.il/Shared/Ajax/GetCitiesMix.aspx"
+# req <- request(url_cities)
+# req <- request(DISTRICTS_URL)
+# resp <- req_perform(req)
+# df_dis <-
+# resp %>%
+#   resp_body_string() %>%
+#   jsonlite::fromJSON() %>% qDT()

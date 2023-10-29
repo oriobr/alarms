@@ -1,0 +1,76 @@
+library(fastverse)
+library(RCurl)
+library(httr2)
+library(jsonlite)
+library(sf)
+
+
+#-----------------------
+
+
+fetch("https://maps.googleapis.com/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/GetViewportInfo", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "he,en;q=0.9,en-GB;q=0.8,en-US;q=0.7",
+    "content-type": "application/json+protobuf",
+    "sec-ch-ua": "\"Chromium\";v=\"118\", \"Microsoft Edge\";v=\"118\", \"Not=A?Brand\";v=\"99\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "cross-site",
+    "x-goog-api-key": "AIzaSyDgclrR8QqACLDYcgLjsLd1RIZV9-V8Bpc",
+    "x-goog-maps-api-salt": "UTkMpQOUn",
+    "x-goog-maps-api-signature": "31991",
+    "x-goog-maps-client-id": "",
+    "x-user-agent": "grpc-web-javascript/0.1",
+    "Referer": "https://www.tzevaadom.co.il/",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  },
+  "body": "[[[31.02859375458821,34.52744742097097],[31.448998652486914,35.01565956046624]],12,null,\"iw\",0,\"m@668000000\",0,0,null,null,null,1,\"https://www.tzevaadom.co.il/alerts/1113\",1]",
+  "method": "POST"
+});
+
+
+
+
+
+mp <- st_combine(
+  st_buffer(
+    st_sfc(lapply(1:3, function(x) st_point(c(x, x)))), 0.2 * 1:3))
+plot(mp)
+
+#----------------
+
+base_url <- "services-eu1.arcgis.com"
+
+
+req %<>% req_url_path_append("/Vh4Ni8nW38EHDz4d/ArcGIS/rest/services/03112021_Warning_Zones_Targil/FeatureServer?f=json")
+req <-  request(base_url)
+
+
+
+url_base <- ("https://services-eu1.arcgis.com/Vh4Ni8nW38EHDz4d/ArcGIS/rest/services/03112021_Warning_Zones_Targil/FeatureServer?f=json")
+      
+headers =  list(
+    "accept"= "*/*",
+    "accept-language"= "he,en;q=0.9,en-GB;q=0.8,en-US;q=0.7",
+    "sec-ch-ua"= "\"Chromium\";v=\"118\", \"Microsoft Edge\";v=\"118\", \"Not=A?Brand\";v=\"99\"",
+    "sec-ch-ua-mobile"= "?0",
+    "sec-ch-ua-platform"= "\"Windows\"",
+    "sec-fetch-dest"= "empty",
+    "sec-fetch-mode"= "cors",
+    "sec-fetch-site"= "same-site",
+    "Referer" = "https://www.arcgis.com/apps/mapviewer/index.html?url=https://services-eu1.arcgis.com/Vh4Ni8nW38EHDz4d/ArcGIS/rest/services/03112021_Warning_Zones_Targil/FeatureServer&source=sd",
+    "Referrer-Policy" = "no-referrer-when-downgrade"
+  )
+
+req <-  request(base_url)
+
+resp <- 
+req %>%
+  req_headers(!!!headers) %>% 
+req_perform()
+
+
+resp %>% resp_body_string() %>% cat()

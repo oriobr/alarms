@@ -1,0 +1,315 @@
+
+# Packages
+
+source("D:/Research/EricG_Research_11620277/muly/immigration/process/R/our_packages.R")
+ 
+
+library(broom)
+library(matrixStats)
+library(sf)
+library(data.table)
+library(kit)
+library(collapse)
+library(foreach)
+library(iterators)
+library(magrittr)
+# library(fixest)
+library(ggplot2)
+library(ggpubr)
+library(haven)
+library(fixest)
+# library(lubridate)
+library(readxl)
+#library(dplyr)
+#library(tidyr)
+library(stringr)
+# library(fastverse)
+# library(tidytable)
+# library(countrycode)
+library(utf8)
+# library(foreach)
+library(doParallel)
+library(lfe)
+library(progress)
+library(callr)
+library(igraph)
+library(future.callr)
+library(doFuture)
+
+# .libPaths("D:/temp/R/4.0/4.0")
+# library(data.table)
+# library(collapse)
+# library(foreach)
+# library(iterators)
+# library(magrittr)
+# library(fixest)
+# library(ggplot2)
+# library(ggpubr)
+# library(haven)
+# library(fixest)
+# # library(lubridate)
+# library(readxl)
+# #library(dplyr)
+# #library(tidyr)
+# library(stringr)
+# # library(fastverse)
+# library(kit)
+# # library(tidytable)
+# # library(countrycode)
+# library(utf8)
+# library(matrixStats)
+# library(foreach)
+# library(doParallel)
+# library(lfe)
+# library(progress)
+# library(callr)
+
+plan(callr(workers = 1))
+
+gc()
+
+options(scipen = 999)
+
+# directory
+# source("D:/Research/EricG_Research_11620277/muly/immigration/process/R/our_directory.R")
+# 
+# root <- "D:/Research/EricG_Research_11620277/"
+ # root <- "C:/Users/osoor/Documents/eco/immigration"
+#  # root <- ""
+# 
+# #root <- "X:/incoming/"
+# #root <- "C:/Users/30065903/"
+# 
+# raw <- paste0(root, "raw/")
+# # raw <- "C:/Users/Owner/Documents/GitHub/simulate_cbs_data/data/output/dta/"
+raw <- "C:/Users/OriOberman/Documents/GitHub/simulate_cbs_data/data/output/dta/"
+
+# project <- paste0(root, "muly/immigration/")
+project <- "C:/Users/OriOberman/Documents/GitHub/immigration/"
+# 
+process <- paste0(project, "process/R/")
+log <- paste0(project, "log/R/")
+excel <- paste0(project, "data/input/xlsx/")
+data <- paste0(project, "data/inter/Rdata/")
+temp <- paste0(project, "temp/")
+output <- paste0(project, "output/csv/")
+output_figures <- paste0(project, "output/figures/")
+
+# setwd(process)
+
+# open log file
+today <- lubridate::today()
+filename <- paste0(log, "log_immigration_",today,".txt")
+sink(file = filename,split = TRUE)
+
+
+##
+
+
+
+# ran source -----------------------------
+
+## utils ------------
+source(paste0(process, "utils.R"))
+source(paste0(process, "utils_data.R"))
+
+### estimate fun ---------
+
+source(paste0(process, "estimation_functions_and_formulas.R"))
+
+
+### sorkin fun --------------
+
+source(paste0(process, "sorkin_reshape_fun.R"))
+
+source(paste0(process, "sorkin_estimate_fun.R"))
+
+
+## Data cleaning ----------
+source(paste0(process, "prepare_haredi.R")) # done
+
+source(paste0(process, "prepare_country.R")) # done
+
+source(paste0(process, "prepare_population.R")) # done
+
+source(paste0(process, "prepare_FSU_data.R")) # done
+
+source(paste0(process, "prepare_wages.R")) # done
+
+source(paste0(process, "prepare_industry.R")) # done
+
+source(paste0(process, "prepare_main_industry.R")) # done
+
+source(paste0(process, "prepare_seder.R")) # done
+
+source(paste0(process, "prepare_sector.R")) # done
+
+source(paste0(process, "prepare_revenue.R")) # done
+
+source(paste0(process, "prepare_education.R")) # done
+
+source(paste0(process, "prepare_firm_size.R")) # done
+
+source(paste0(process, "prepare_firm_first_year.R")) # done
+
+source(paste0(process, "prepare_locality_firm.R")) # done
+
+source(paste0(process, "prepare_dist_from_TLV.R")) # done
+
+source(paste0(process, "prepare_poaching_index.R")) # done
+
+source(paste0(process, "prepare_first_job.R")) # done
+
+source(paste0(process, "prepare_sample.R")) # done
+
+source(paste0(process, "prepare_sample_all_israel.R")) # done
+
+source(paste0(process, "prepare_months_to_first_job.R")) # done
+
+source(paste0(process, "prepare_ysa_20_in_isreal.R")) # done
+
+
+## export to stata ------
+
+source(paste0(process, "prepare_akm_stata.R")) # done
+
+source(paste0(process, "prepare_akm_stata_common.R")) # done
+
+source(paste0(process, "prepare_akm_stata_dual.R")) # done
+
+source(paste0(process, "prepare_akm_stata_triple.R")) 
+
+source(paste0(process, "prepare_akm_split_sample.R")) # done
+
+source(paste0(process, "prepare_firm_features.R")) # done
+
+source(paste0(process, "prepare_akm_decade.R")) # done
+
+source(paste0(process, "prepare_event_study.R")) # done 
+
+
+
+## all israel sample ----------
+
+
+source(paste0(process, "prepare_akm_all_israel_dual.R")) # done
+
+source(paste0(process, "prepare_akm_all_israel_common.R")) # done
+
+source(paste0(process, "prepare_akm_all_israel_decade.R")) # done
+
+
+## estimate ---------
+
+
+
+### ran estimate  ---------
+
+source(paste0(process, "estimate_akm.R")) # done
+
+source(paste0(process, "tables_akm_2.R")) # done
+
+source(paste0(process, "tables_firm_fe_2.R"))
+
+source(paste0(process, "tables_switches.R")) # done
+
+source(paste0(process, "tables_salary.R"))
+
+source(paste0(process, "tables_salary_iage_iy.R")) # done
+
+source(paste0(process, "tables_salary_ysa20.R")) # done
+
+source(paste0(process, "tables_yearly_firm_vars.R")) # done
+
+source(paste0(process, "tables_fixed_firm_vars.R")) # done
+
+source(paste0(process, "tables_firm_age.R")) # done
+
+source(paste0(process, "tables_main_industry.R")) # done
+
+source(paste0(process, "tables_seder.R")) # done
+
+source(paste0(process, "tables_dist_from_TLV.R")) # done 
+
+source(paste0(process, "tables_salary_iage_iy.R")) # done
+
+source(paste0(process, "tables_firm_fe_iage_iy.R")) # done
+
+source(paste0(process, "tables_salary_ysa20.R")) # done
+
+source(paste0(process, "tables_firm_fe_ysa20.R")) # done
+
+source(paste0(process, "tables_firm_fe_ysa_fe.R")) 
+
+
+### ran all israel estimate  ---------
+
+source(paste0(process, "estimate_all_israel_akm.R")) # done
+
+source(paste0(process, "estimate_all_israel_decade_akm.R"))
+
+source(paste0(process, "tables_all_israel_akm.R")) # done
+
+source(paste0(process, "tables_firm_fe_all_israel.R")) # done
+
+source(paste0(process, "tables_salary_all_israel.R"))
+
+
+## figures and tables ------------
+
+source(paste0(process, "create_figures_and_tables.R"))
+
+source(paste0(process, "prepare_summary_statistics.R"))
+
+source(paste0(process, "prepare_FSU_native_firm_diff.R"))
+
+
+
+
+# 
+# # ran source -----------------------------
+# 
+# ## utils ------------
+# source(paste0(process, "utils.R"))
+# source(paste0(process, "utils_data.R"))
+# 
+# 
+# ## Data cleaning----------
+# source(paste0(process, "prepare_haredi.R"))
+# 
+# source(paste0(process, "prepare_country.R"))
+# 
+# source(paste0(process, "prepare_population.R"))
+# 
+# source(paste0(process, "prepare_wages.R"))
+# 
+# source(paste0(process, "prepare_industry.R"))
+# 
+# source(paste0(process, "prepare_sector.R"))
+# 
+# source(paste0(process, "prepare_revenue.R"))
+# 
+# source(paste0(process, "prepare_education.R"))
+# 
+# source(paste0(process, "prepare_sample.R"))
+# 
+# ## export to stata ------
+# 
+# source(paste0(process, "prepare_akm_stata.R"))
+# 
+# source(paste0(process, "prepare_akm_stata_common.R"))
+# 
+# source(paste0(process, "prepare_akm_stata_dual.R"))
+# 
+# source(paste0(process, "prepare_akm_stata_triple.R"))
+# 
+# source(paste0(process, "prepare_firm_features.R"))
+# 
+# ## figures and tables ------------
+# 
+# source(paste0(process, "create_figures_and_tables.R"))
+# 
+# source(paste0(process, "prepare_summary_statistics.R"))
+# 
+# source(paste0(process, "prepare_FSU_native_firm_diff.R"))
+# 

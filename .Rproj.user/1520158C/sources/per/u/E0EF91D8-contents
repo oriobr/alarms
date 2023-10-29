@@ -1,0 +1,33 @@
+
+
+
+scale_size_identity()
+
+
+
+# p2 <-
+  map_all_area %>%  ggplot()+ geom_sf(fill = "black")+
+  geom_sf(data = df_plot %>% sbt(date %in% first_day),
+  # geom_sf(data = df_plot ,
+          aes(
+            size = area_size,
+            color =alpha(fill_color,0.5),
+            fill = fill_color,
+            # color =category_desc,
+            # fill =category_desc,
+            group =date_2  ),
+          # group = id  ),
+          # group = alertDate  ),
+          # color ="white",
+          alpha = 0.5,
+          show.legend = FALSE)+
+  # scale_color_manual(values = (pal_info), aesthetics = c("fill"))+
+  scale_fill_identity(aesthetics = c("color","fill"))+
+  scale_size_identity()+
+  # scale_color_manual(values = darken(pal_info,amount = 0.3), aesthetics = c("color"))+
+  # scale_color_manual(values = (pal_info), aesthetics = c("fill","color"))+
+  # labs(title = 'Date: {frame_time}')+
+  theme_void(base_size = 23,base_family = "Heebo")+
+  theme(plot.title = element_text(hjust = 0.5,face = "bold"))
+
+p1

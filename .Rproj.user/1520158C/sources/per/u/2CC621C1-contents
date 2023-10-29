@@ -1,0 +1,25 @@
+library(glue)
+
+
+url <-   'https://maps.googleapis.com/maps/api/geocode/json?region=il&key=AIzaSyCSeMZ5AxUgSWHy6EedcgeXjRC2irszdUQ' 
+
+
+https://maps.googleapis.com/maps/api/js?key=AIzaSyDgclrR8QqACLDYcgLjsLd1RIZV9-V8Bpc&callback=initMap&libraries=&v=weekly&language=he
+
+city_name <- "נחושה"
+key_2="AIzaSyCSeMZ5AxUgSWHy6EedcgeXjRC2irszdUQ"
+
+url <- 
+glue("https://maps.googleapis.com/maps/api/geocode/json?address={city_name}&key={key_2}&language=iw")
+
+req <- request(url)
+resp <- req %>% req_perform()
+
+
+resp %>% resp_body_json()
+
+
+#------------------------
+library(mapsapi)
+
+mapsapi::mp_geocode(addresses = "נחושה")
