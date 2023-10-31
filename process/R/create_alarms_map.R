@@ -84,6 +84,7 @@ rm(df_all_area)
 
 day_list <-  seq.Date(as.Date("2023-10-6"),Sys.Date(),by = 1)
 df1 <-  get_alarm_history(day_list,language = "he")
+df1 %<>% funique()
 df_en <-  get_alarm_history(day_list,language = "en")
 df_en %<>% .[,.(category_desc_en = category_desc,category) ]
 df_en %<>% funique()
